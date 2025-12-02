@@ -11,12 +11,35 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://traffic-client.vercel.app/", // Allow only the deployed frontend
-    methods: ["GET", "POST"]
+    // Allow local dev frontend plus deployed frontend
+    origin: [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "https://traffic-client.vercel.app"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
-app.use(cors());
+// Allow CORS for API routes (permits dev localhost and deployed frontend)
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    const allowed = [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'https://traffic-client.vercel.app'
+    ];
+    if (allowed.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // MongoDB Connection
@@ -30,7 +53,7 @@ const connectDB = async () => {
     console.log('MongoDB Connected');
   } catch (err) {
     console.error('MongoDB connection failed:', err.message);
-    process.exit(1);
+    console.error('Continuing without MongoDB — server will still start for frontend development.');
   }
 };
 
