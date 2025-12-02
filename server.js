@@ -59,6 +59,11 @@ const apiRoutes = require('./routes/api');
 app.use('/api/auth', authRoutes);
 app.use('/api', apiRoutes);
 
+// Root route to handle GET /
+app.get('/', (req, res) => {
+  res.send('Traffic Server is running!');
+});
+
 // Socket.io Logic
 const { handleSocketConnection } = require('./utils/socketHandler');
 handleSocketConnection(io);
