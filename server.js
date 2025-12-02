@@ -11,7 +11,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow all origins for now, restrict in production
+    origin: "https://traffic-client.vercel.app/", // Allow only the deployed frontend
     methods: ["GET", "POST"]
   }
 });
@@ -20,33 +20,17 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-const { MongoMemoryServer } = require('mongodb-memory-server');
-
 const connectDB = async () => {
   try {
-    console.log('Attempting to connect to Local MongoDB...');
-    await mongoose.connect('mongodb://localhost:27017/traffic-system', {
-      serverSelectionTimeoutMS: 2000 // Fail fast if not found
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/traffic-system';
+    console.log('Attempting to connect to MongoDB...');
+    await mongoose.connect(mongoURI, {
+      serverSelectionTimeoutMS: 5000
     });
-    console.log('MongoDB Connected (Local)');
+    console.log('MongoDB Connected');
   } catch (err) {
-    console.log('Local MongoDB failed (likely not running). Starting In-Memory Database...');
-    try {
-      const mongod = await MongoMemoryServer.create();
-      const uri = mongod.getUri();
-      console.log('In-Memory DB URI:', uri);
-      
-      await mongoose.connect(uri, {
-        dbName: 'traffic-system'
-      });
-      console.log('MongoDB Connected (In-Memory)');
-      
-      // Seed Admin User if using in-memory DB
-      // We can just rely on the hardcoded check in auth.js for now
-      
-    } catch (err2) {
-      console.error('CRITICAL: Failed to connect to In-Memory MongoDB:', err2);
-    }
+    console.error('MongoDB connection failed:', err.message);
+    process.exit(1);
   }
 };
 
